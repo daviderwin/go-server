@@ -4,7 +4,12 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/mattbaird/gosaml"
+	//"log"
+	"io/ioutil"
 	"net/http"
+	"os"
+	//"strings"
+	//	"unicode"
 )
 
 func main() {
@@ -13,6 +18,7 @@ func main() {
 
 	r.HandleFunc("/", HomeHandler)
 	r.HandleFunc("/saml", SAMLRequestHandler)
+	r.HandleFunc("/proxy", ProxyHandler)
 
 	http.ListenAndServe(":8080", r)
 
@@ -40,4 +46,22 @@ func SAMLRequestHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	w.Write([]byte(saml))
+}
+
+func ProxyHandler(w http.ResponseWriter, r *http.Request) {
+
+	response, err := http.Get(r.URL.RawQuery)
+	if err != nil {
+		fmt.Printf("%s", err)
+		os.Exit(1)
+	} else {
+		defer response.Body.Close()
+		contents, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			fmt.Printf("%s", err)
+			os.Exit(1)
+		}
+		w.Write([]byte(contents))
+	}
+
 }
